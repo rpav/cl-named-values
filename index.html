@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<head>
+  <title>GenDoc Documentation
+  </title>
+  <link rel='stylesheet' type='text/css' href='simple.css' />
+</head>
+<html>
+
+<h1>cl-named-values</h1>
+
+<p>This started out as an endeavor to conveniently cherry-pick values:</p>
+
+<code class="codeblock"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> get-x-y <span class="paren2">(<span class="code"></span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code">named-values get-x-y <span class="keyword">:x</span> 1 <span class="keyword">:y</span> 2</span>)</span></span>)</span><br><br>
+<span class="paren1">(<span class="code">get-x-y</span>)</span> <span class="comment">;; =&gt; 1, 2<br>
+</span><br>
+<span class="paren1">(<span class="code">nbind <span class="paren2">(<span class="code">y</span>)</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="paren2">(<span class="code">get-x-y</span>)</span><br>&nbsp;&nbsp;y</span>)</span> <span class="comment">;; =&gt; 2</span></code>
+
+<p>This then evolved somewhat into a consideration for defining &quot;output
+protocols&quot;, but with a desire to keep things simple:</p>
+
+<code class="codeblock"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> get-point <span class="paren2">(<span class="code">&amp;optional 3d-p</span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code"><i><span class="symbol">if</span></i> 3d-p<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="paren3">(<span class="code">named-values point-3d <span class="keyword">:x</span> 0 <span class="keyword">:y</span> 0 <span class="keyword">:z</span> 1</span>)</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="paren3">(<span class="code">named-values point-2d <span class="keyword">:x</span> 0 <span class="keyword">:y</span> 0</span>)</span></span>)</span></span>)</span><br><br>
+<span class="paren1">(<span class="code">get-point</span>)</span> &nbsp;&nbsp;<span class="comment">;; =&gt; 0, 0<br>
+</span><span class="paren1">(<span class="code">get-point t</span>)</span> <span class="comment">;; =&gt; 0, 0, 1<br>
+</span><br>
+<span class="paren1">(<span class="code">ncase <span class="paren2">(<span class="code">get-point t</span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code">point-2d <span class="paren3">(<span class="code">x y</span>)</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="paren3">(<span class="code">format t <span class="string">"A 2D point at ~A,~A~%"</span> x y</span>)</span></span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code">point-3d <span class="paren3">(<span class="code">x y z</span>)</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="paren3">(<span class="code">format t <span class="string">"A 3D point at ~A,~A,~A~%"</span> x y z</span>)</span></span>)</span></span>)</span><br><br>
+<span class="comment">;; "A 3D point at 0,0,1"<br>
+</span><br>
+<span class="paren1">(<span class="code">ncase <span class="paren2">(<span class="code">get-point t</span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code">t <span class="paren3">(<span class="code">type &amp;rest values</span>)</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="paren3">(<span class="code">format t <span class="string">"Got ~A: ~A"</span> type values</span>)</span></span>)</span></span>)</span><br><br>
+<span class="comment">;; "Got POINT-3D: (0 0 1)"</span></code>
+
+<h2>Mapping Values</h2>
+
+<p>It may be desirable at times to &quot;pass through&quot; existing values, but
+map names to them.  This can be done easily via <code>VALUES-MAP-NAMES</code>:</p>
+
+<code class="codeblock"><span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> plain-values <span class="paren2">(<span class="code"></span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code">values 1 2 3</span>)</span></span>)</span><br><br>
+<span class="paren1">(<span class="code"><i><span class="symbol">defun</span></i> map-names-to-values <span class="paren2">(<span class="code"></span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code">values-map-names point-3d <span class="paren3">(<span class="code">x y z</span>)</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="paren3">(<span class="code">plain-values</span>)</span></span>)</span></span>)</span><br><br>
+<span class="paren1">(<span class="code">plain-values</span>)</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">;; =&gt; 1, 2, 3<br>
+</span><span class="paren1">(<span class="code">map-names-to-values</span>)</span> &nbsp;<span class="comment">;; =&gt; 1, 2, 3<br>
+</span><br>
+<span class="paren1">(<span class="code">nbind point-3d <span class="paren2">(<span class="code">x y z</span>)</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="paren2">(<span class="code">plain-values</span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code">list x y z</span>)</span></span>)</span> <span class="comment">;; =&gt; ERROR<br>
+</span><br>
+<span class="paren1">(<span class="code">nbind point-3d <span class="paren2">(<span class="code">x y z</span>)</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="paren2">(<span class="code">map-names-to-values</span>)</span><br>&nbsp;&nbsp;<span class="paren2">(<span class="code">list x y z</span>)</span></span>)</span> <span class="comment">;; =&gt; (1 2 3)</span></code>
+
+<a name='REFERENCE-NAMED-VALUES'></a>
+<h1>
+  Reference: NAMED-VALUES
+</h1>
+<h2>
+  Macros
+</h2>
+<a name='NAMED-VALUES' class='apiref-row'></a>
+<div class='apiref-spec'>NAMED-VALUES
+</div>
+<div class='apiref-lambda'>(TYPE &REST ARGS)
+</div>
+<div class='apiref-result'>=> values
+</div>
+<div class='apiref-doc'>
+
+<p>Return values with the protocol <code>TYPE</code>.  This should probably be the
+name of the enclosing function by default, but may be another symbol
+as desired.  This generates a warning if a different set of names is
+used with the same <code>TYPE</code>.  This may become an error in the future.</p>
+
+<code class="codeblock"> <span class="paren1">(<span class="code">named-values TYPE [<span class="paren2">(<span class="code">ARGS</span>)</span>] [<span class="keyword">:NAME0</span> VALUE0 [...]]</span>)</span></code>
+
+<p>The values specified will be returned as per <code>VALUES</code>, but an extra note
+is made if called within a <code>NAMED-VALUES</code> form.</p>
+
+</div>
+<a name='NBIND' class='apiref-row'></a>
+<div class='apiref-spec'>NBIND
+</div>
+<div class='apiref-lambda'>(&REST ARGS)
+</div>
+<div class='apiref-result'>
+</div>
+<div class='apiref-doc'>
+
+<p><code>NBIND</code> takes an optional type <code>TYPE</code>, a list of value names <code>NAME*</code>,
+a named-value form <code>FORM</code>, and a body <code>BODY</code>, as per the following:</p>
+
+<code class="codeblock"> <span class="paren1">(<span class="code">nbind [TYPE] <span class="paren2">(<span class="code">NAME*</span>)</span><br>&nbsp;&nbsp;&nbsp;&nbsp;FORM<br>&nbsp;&nbsp;BODY*</span>)</span></code>
+
+<p>Each name <code>NAME</code> is a symbol corresponding to specified named values,
+or a list in the form <code>(NAME ALIAS)</code>, where <code>NAME</code> is the given name,
+and <code>ALIAS</code> is the name to be used in <code>BODY</code>.  Symbols are compared by
+<code>SYMBOL-NAME</code> at compile time, and do not have to originate from the
+same package.</p>
+
+<p>If <code>TYPE</code> is not specified, it is assumed to be the first symbol in
+the list <code>FORM</code>.  Thus, for simple cases, it is convenient to define
+the type of a named value clause to match its function name.</p>
+
+<p>It is an error if <code>TYPE</code> does not match the actual type, or if any
+<code>NAME</code> is not specified by the original <code>TYPE</code>.</p>
+
+</div>
+<a name='NCASE' class='apiref-row'></a>
+<div class='apiref-spec'>NCASE
+</div>
+<div class='apiref-lambda'>(NAMED-VALUE-FORM &BODY CLAUSES)
+</div>
+<div class='apiref-result'>
+</div>
+<div class='apiref-doc'>
+
+<p>This works like <code>CASE</code>, but for the <code>TYPE</code> of the values returned
+by <code>NAMED-VALUE-FORM</code>:</p>
+
+<code class="codeblock"> <span class="paren1">(<span class="code">ncase NAMED-VALUE-FORM<br>&nbsp;&nbsp;<span class="paren2">(<span class="code">TYPE <span class="paren3">(<span class="code">NAME*</span>)</span> FORM*</span>)</span>*</span>)</span></code>
+
+<p>If a type <code>TYPE</code> is found that matches the actual named values type,
+<code>FORM*</code> are evaluated.  Otherwise, it is an error.</p>
+
+<p>It is possible to specify <code>T</code> or <code>OTHERWISE</code>.  In this case, <code>NAME*</code>
+must be a lambda list which takes <code>TYPE</code> followed by an arbitrary
+number of parameters (bound to returned values), probably via
+<code>&amp;rest</code>.</p>
+
+</div>
+<a name='VALUES-MAP-NAMES' class='apiref-row'></a>
+<div class='apiref-spec'>VALUES-MAP-NAMES
+</div>
+<div class='apiref-lambda'>(TYPE NAMES VALUE-FORM)
+</div>
+<div class='apiref-result'>=> values
+</div>
+<div class='apiref-doc'>
+
+<p>Take values from <code>VALUE-FORM</code> and map them to type <code>TYPE</code> with
+names <code>NAMES</code>.  Primarily for remapping passed-through values.</p>
+
+</div>
+</html>
