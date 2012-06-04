@@ -1,6 +1,7 @@
 (in-package :named-values)
 
 (defvar *named-values-types* (make-hash-table))
+(defvar *named-values-documentation* (make-hash-table))
 (defvar *with-named-values* nil)
 
 (defun infer-names (args)
@@ -9,7 +10,28 @@
                     (intern (symbol-name name))
                     (error "Name not a keyword: ~A" name))))
 
-(defmacro named-values (type &rest args)
+(defmethod documentation ((x symbol) (doc-type (eql 'named-values)))
+  (gethash x *named-values-documentation*))
+
+(defmethod (setf documentation) (new-value (x symbol) (doc-type (eql 'named-values)))
+  (setf (gethash x *named-values-documentation*) new-value))
+
+(defmacro define-named-values (type args &rest options)
+  "Define `TYPE` as a named-value type, taking `ARGS`.  For `OPTIONS`,
+`:documentation` is currently useful, and available via `DOCUMENTATION`
+when called as per the following:
+
+```lisp
+ (documentation <named-value-type> 'named-values:named-values)
+```
+
+Other `OPTIONS` are ignored."
+  (setf (gethash type *named-values-types*) args)
+  (setf (documentation type 'named-values)
+        (cadr (find :documentation options :key #'car)))
+  (values))
+
+(defmacro named-values (type &body args)
   "=> values
 
 Return values with the protocol `TYPE`.  This should probably be the
@@ -95,12 +117,15 @@ It is an error if `TYPE` does not match the actual type, or if any
            ,(make-named-value-lambda type lambda-args args)
          ,value-form))))
 
-(defmacro values-map-names (type names value-form)
+(defmacro values-map-names (type value-form &optional names)
   "=> values
 
 Take values from `VALUE-FORM` and map them to type `TYPE` with
-names `NAMES`.  Primarily for remapping passed-through values."
-  (let ((vars (mapcar (lambda (x) (declare (ignore x)) (gensym)) names)))
+names `NAMES`.  Primarily for remapping passed-through values.
+
+`NAMES` may be unspecified if `TYPE` is previously-defined."
+  (let* ((names (or names (gethash type *named-values-types*)))
+         (vars (mapcar (lambda (x) (declare (ignore x)) (gensym)) names)))
     `(multiple-value-bind ,vars ,value-form
        (named-values ,type ,names
          ,@(loop for var in vars
