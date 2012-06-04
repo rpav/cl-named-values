@@ -5,9 +5,7 @@
   </title>
   <link rel='stylesheet' type='text/css' href='simple.css' />
 </head>
-<html>
-
-<h1>cl-named-values</h1>
+<html><h1>cl-named-values</h1>
 
 <p>This started out as an endeavor to conveniently cherry-pick values:</p>
 
@@ -50,10 +48,28 @@ map names to them.  This can be done easily via <code>VALUES-MAP-NAMES</code>:</
 <h2>
   Macros
 </h2>
+<a name='DEFINE-NAMED-VALUES' class='apiref-row'></a>
+<div class='apiref-spec'>DEFINE-NAMED-VALUES
+</div>
+<div class='apiref-lambda'>(TYPE ARGS &REST OPTIONS)
+</div>
+<div class='apiref-result'>
+</div>
+<div class='apiref-doc'>
+
+<p>Define <code>TYPE</code> as a named-value type, taking <code>ARGS</code>.  For <code>OPTIONS</code>,
+<code>:documentation</code> is currently useful, and available via <code>DOCUMENTATION</code>
+when called as per the following:</p>
+
+<code class="codeblock"> <span class="paren1">(<span class="code">documentation &lt;named-value-type&gt; 'named-values:named-values</span>)</span></code>
+
+<p>Other <code>OPTIONS</code> are ignored.</p>
+
+</div>
 <a name='NAMED-VALUES' class='apiref-row'></a>
 <div class='apiref-spec'>NAMED-VALUES
 </div>
-<div class='apiref-lambda'>(TYPE &REST ARGS)
+<div class='apiref-lambda'>(TYPE &BODY ARGS)
 </div>
 <div class='apiref-result'>=> values
 </div>
@@ -124,7 +140,7 @@ number of parameters (bound to returned values), probably via
 <a name='VALUES-MAP-NAMES' class='apiref-row'></a>
 <div class='apiref-spec'>VALUES-MAP-NAMES
 </div>
-<div class='apiref-lambda'>(TYPE NAMES VALUE-FORM)
+<div class='apiref-lambda'>(TYPE VALUE-FORM &OPTIONAL NAMES)
 </div>
 <div class='apiref-result'>=> values
 </div>
@@ -132,6 +148,8 @@ number of parameters (bound to returned values), probably via
 
 <p>Take values from <code>VALUE-FORM</code> and map them to type <code>TYPE</code> with
 names <code>NAMES</code>.  Primarily for remapping passed-through values.</p>
+
+<p><code>NAMES</code> may be unspecified if <code>TYPE</code> is previously-defined.</p>
 
 </div>
 </html>
