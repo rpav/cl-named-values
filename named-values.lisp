@@ -26,10 +26,11 @@ when called as per the following:
 ```
 
 Other `OPTIONS` are ignored."
-  (setf (gethash type *named-values-types*) args)
-  (setf (documentation type 'named-values)
-        (cadr (find :documentation options :key #'car)))
-  (values))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (setf (gethash ',type *named-values-types*) ',args)
+     (setf (documentation ',type 'named-values)
+           (cadr (find :documentation ',options :key #'car)))
+     (values)))
 
 (defmacro named-values (type &body args)
   "=> values
