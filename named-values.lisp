@@ -4,10 +4,10 @@
 (defvar *named-values-documentation* (make-hash-table))
 (defvar *with-named-values* nil)
 
-(defun infer-names (args)
+(defun infer-names (args package)
   (loop for name in args by #'cddr
         collect (if (keywordp name)
-                    (intern (symbol-name name))
+                    (intern (symbol-name name) package)
                     (error "Name not a keyword: ~A" name))))
 
 (defmethod documentation ((x symbol) (doc-type (eql 'named-values)))
@@ -49,11 +49,11 @@ is made if called within a `NAMED-VALUES` form."
   (let ((existing-names (gethash type *named-values-types*))
         (names (if (listp (car args))
                    (pop args)
-                   (infer-names args))))
+                   (infer-names args (symbol-package type)))))
     (unless (or (null existing-names) (equalp names existing-names))
       (warn (make-condition
              'simple-warning
-             :format-control "Existing NAMED-VALUES type ~A redefined with differing arguments:~%  New: ~A~%  Old: ~A"
+             :format-control "Existing NAMED-VALUES type ~A redefined with differing arguments:~%  New: ~S~%  Old: ~S"
              :format-arguments (list type names existing-names))))
     (setf (gethash type *named-values-types*) names)
     `(progn
