@@ -81,9 +81,6 @@ is made if called within a `NAMED-VALUES` form."
     `(lambda ,(concatenate 'list binds
                 `(&rest ,rest))
        (declare (ignorable ,@binds ,rest))
-       (unless (eq *with-named-values* ',type)
-         (error "NAMED-VALUE type ~A expected, got ~A"
-                ',type *with-named-values*))
        ,@body)))
 
 (defmacro nbind (&rest args)
@@ -113,10 +110,14 @@ It is an error if `TYPE` does not match the actual type, or if any
                    (caadr args)))
          (lambda-args (pop args))
          (value-form (pop args)))
-    `(let ((*with-named-values* t))
-       (multiple-value-call
-           ,(make-named-value-lambda type lambda-args args)
-         ,value-form))))
+    `(multiple-value-call
+         ,(make-named-value-lambda type lambda-args args)
+       (let ((*with-named-values* t))
+         (multiple-value-prog1
+             ,value-form
+           (unless (eq *with-named-values* ',type)
+             (error "NAMED-VALUE type ~A expected, got ~A"
+                    ',type *with-named-values*)))))))
 
 (defmacro values-map-names (type value-form &optional names)
   "=> values
