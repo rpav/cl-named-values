@@ -151,22 +151,26 @@ It is possible to specify `T` or `OTHERWISE`.  In this case, `NAME*`
 must be a lambda list which takes `TYPE` followed by an arbitrary
 number of parameters (bound to returned values), probably via
 `&rest`."
-  (let ((args (gensym)))
-    `(let ((*with-named-values* t))
-       (multiple-value-call
-           (lambda (&rest ,args)
-             (case *with-named-values*
-               ,@(loop for clause in clauses
-                       collect
-                       (if (or (eq t (car clause))
-                               (eq 'otherwise (car clause)))
-                           `(,(car clause)
-                             (apply (lambda ,(cadr clause)
-                                      ,@(cddr clause))
-                                    *with-named-values* ,args))
-                           `(,(car clause)
-                             (apply ,(make-named-value-lambda
-                                      (car clause) (cadr clause)
-                                      (cddr clause))
-                                    ,args))))))
-         ,named-value-form))))
+  (let ((args (gensym))
+        (type (gensym)))
+    `(let (,type)
+      (multiple-value-call
+          (lambda (&rest ,args)
+            (case ,type
+              ,@(loop for clause in clauses
+                      collect
+                      (if (or (eq t (car clause))
+                              (eq 'otherwise (car clause)))
+                          `(,(car clause)
+                            (apply (lambda ,(cadr clause)
+                                     ,@(cddr clause))
+                                   *with-named-values* ,args))
+                          `(,(car clause)
+                            (apply ,(make-named-value-lambda
+                                     (car clause) (cadr clause)
+                                     (cddr clause))
+                                   ,args))))))
+        (let ((*with-named-values* t))
+          (multiple-value-prog1
+              ,named-value-form
+            (setf ,type *with-named-values*)))))))
